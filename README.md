@@ -64,14 +64,15 @@ from the command palette and add:
   {
     "context": "Editor",
     "bindings": {
-      "ctrl-alt-c": ["task::Spawn", { "task_name": "marginalia: comment on selection" }]
+      "ctrl-shift-c": ["task::Spawn", { "task_name": "marginalia: comment on selection" }]
     }
   }
 ]
 ```
 
 `"context": "Editor"` rather than `"Workspace"`, so the binding fires only where a selection
-exists.
+exists. Pick whatever key you like: a user binding shadows any Zed default for the same key in
+the same context, so check `zed: open default keymap` first if you would rather not lose one.
 
 Selecting nothing is legal and gives a single-row comment on the cursor's row, because no
 key-binding predicate can require a selection to exist first. Zed reports only one row for a
