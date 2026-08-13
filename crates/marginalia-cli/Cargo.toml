@@ -1,0 +1,12 @@
+[package]
+name = "marginalia-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "marginalia"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+marginalia-core.workspace = true
