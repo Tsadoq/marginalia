@@ -1,0 +1,4 @@
+/target
+crates/marginalia-zed-ext/target/
+crates/marginalia-zed-ext/extension.wasm
+.marginalia/
