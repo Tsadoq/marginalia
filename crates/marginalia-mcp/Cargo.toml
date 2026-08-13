@@ -1,0 +1,15 @@
+[package]
+name = "marginalia-mcp"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+marginalia-core.workspace = true
+rmcp = { version = "3.1.2", features = ["server", "macros", "transport-io"] }
+serde.workspace = true
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+
+[dev-dependencies]
+serde_json.workspace = true
+tempfile.workspace = true
