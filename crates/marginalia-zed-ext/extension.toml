@@ -1,0 +1,15 @@
+id = "marginalia"
+name = "Marginalia"
+version = "0.1.0"
+schema_version = 1
+description = "Capture review comments in Zed and serve them to your coding agent over MCP."
+authors = ["Matteo Villosio <matteo.villosio@checkmk.com>"]
+repository = "https://github.com/Tsadoq/marginalia"
+
+[[capabilities]]
+kind = "process:exec"
+command = "/bin/sh"
+args = ["**"]
+
+[context_servers.marginalia]
+name = "Marginalia"
