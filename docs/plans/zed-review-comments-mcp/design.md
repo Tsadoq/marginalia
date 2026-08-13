@@ -209,3 +209,25 @@ agent-visible tools are now `mcp__marginalia__list_pending_comments` and
 `comment-for-claude` — an entry still naming the old id simply stops starting, silently, because
 an unenabled context server logs nothing. And a previously installed `cfc-mcp`/`cfc` pair is
 orphaned in `~/.cargo/bin` and should be removed.
+
+### Environment passed to the server
+
+Found in live use, after the rename. Zed puts a context server's environment into the external
+agent's command line: `pgrep -af` on the running `claude-acp` process printed the whole
+`--mcp-config` blob, environment included. The extension was supplying that environment by
+running `/bin/sh -lc env` and returning everything it printed, so every secret in the developer's
+login shell — API tokens among them — became world-readable through `/proc` to any local process.
+
+The fix is to ask the shell only for what the server could want, rather than capturing everything
+and filtering afterwards: filtering would still have carried the secrets through the wasm guest
+and Zed's logs before dropping them. The probe is now
+`printf '%s\n%s\n' "$PATH" "$HOME"`, and the two values are zipped against a named list.
+
+Even `PATH` and `HOME` are generous. The server reads one file under the working directory Zed
+gives it and spawns nothing, so it needs no environment at all; the two are kept only so a future
+version that shells out is not surprised. A pinned `command.env` from settings is passed through
+untouched, since that is the user naming values deliberately.
+
+The earlier claim that an empty `env` was one of the four causes of the startup failure was wrong.
+It was never demonstrated: the capability grant and the unresolvable bare program name account for
+the timeout on their own, and a server needing no environment would not have noticed an empty one.

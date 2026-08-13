@@ -6,6 +6,10 @@ use zed_extension_api::{
 const SERVER_BINARY: &str = "marginalia-mcp";
 const SHELL: &str = "/bin/sh";
 
+/// What the server is given, in the order the shell prints them. It reads one file under
+/// the working directory Zed hands it and spawns nothing, so this is already generous.
+const PASSED_ENV_VARS: &[&str] = &["PATH", "HOME"];
+
 struct MarginaliaExtension;
 
 impl zed::Extension for MarginaliaExtension {
@@ -44,8 +48,14 @@ fn pinned_command(settings: &ContextServerSettings) -> Option<Command> {
     })
 }
 
-/// Resolves the binary and the shell environment it needs. The wasm guest sees neither
-/// the user's `PATH` nor their environment, so both come from a login shell.
+/// Resolves the binary from a login shell, because the wasm guest sees none of the
+/// user's `PATH`.
+///
+/// Zed puts a context server's environment into the agent's command line, where any
+/// local process can read it out of `/proc`, so the shell is asked only for the two
+/// variables the server could plausibly want. Capturing the whole environment and
+/// filtering afterwards would still have carried every secret in it through the guest
+/// and Zed's logs on the way.
 fn discovered_command(id: &ContextServerId) -> Result<Command> {
     let (os, _) = current_platform();
     if matches!(os, Os::Windows) {
@@ -61,12 +71,14 @@ fn discovered_command(id: &ContextServerId) -> Result<Command> {
         Ok(_) => return Err(unresolved(id, format!("`{lookup}` found nothing"))),
         Err(err) => return Err(unresolved(id, err)),
     };
-    let env = login_shell_output("env").map_err(|err| unresolved(id, err))?;
+    let env = login_shell_output(r#"printf '%s\n%s\n' "$PATH" "$HOME""#)
+        .map(|probed| named_pairs(PASSED_ENV_VARS, &probed))
+        .map_err(|err| unresolved(id, err))?;
 
     Ok(Command {
         command: path,
         args: Vec::new(),
-        env: parse_env(&env),
+        env,
     })
 }
 
@@ -83,13 +95,14 @@ fn login_shell_output(script: &str) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
-/// Parses `env` output into pairs. A multi-line value continues onto lines that carry no
-/// `=`; those lines are dropped rather than turned into bogus variables.
-fn parse_env(output: &str) -> Vec<(String, String)> {
-    output
-        .lines()
-        .filter_map(|line| line.split_once('='))
-        .map(|(key, value)| (key.to_string(), value.to_string()))
+/// Zips `names` with the lines the shell printed for them, dropping any that came back
+/// empty so an unset variable is absent rather than set to nothing.
+fn named_pairs(names: &[&str], probed: &str) -> Vec<(String, String)> {
+    names
+        .iter()
+        .zip(probed.lines())
+        .filter(|(_, value)| !value.is_empty())
+        .map(|(name, value)| ((*name).to_owned(), value.to_owned()))
         .collect()
 }
 
