@@ -1,0 +1,15 @@
+[
+  {
+    "label": "marginalia: comment on selection",
+    "command": "marginalia",
+    "args": ["add"],
+    "env": {
+      "MARGINALIA_FILE": "$ZED_RELATIVE_FILE",
+      "MARGINALIA_ROW": "$ZED_ROW",
+      "MARGINALIA_SELECTION": "$ZED_SELECTED_TEXT"
+    },
+    "use_new_terminal": true,
+    "reveal": "always",
+    "hide": "on_success"
+  }
+]

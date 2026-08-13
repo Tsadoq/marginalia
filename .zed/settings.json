@@ -1,0 +1,8 @@
+{
+  "context_servers": {
+    "marginalia": {
+      "enabled": true,
+      "settings": {}
+    }
+  }
+}
